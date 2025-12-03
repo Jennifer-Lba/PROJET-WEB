@@ -19,7 +19,7 @@ class AdminController
     {
         self::requireAdmin();
 
-        $users = User::getAll(); 
+        $users = User::getAll();
         $quizzes = Quiz::getAll();
 
         include __DIR__ . '/../view/admin/dashboard.php';
