@@ -62,3 +62,5 @@ CREATE TABLE IF NOT EXISTS results (
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (quiz_id) REFERENCES quizzes(id)
 );
+
+FAIT PAR ZEINAB;
