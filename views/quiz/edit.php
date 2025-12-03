@@ -41,11 +41,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <title>Modifier le quiz</title>
     <link rel="stylesheet" href="/assets/css/style.css">
 </head>
+
 <body>
     <h1>Modifier le quiz</h1>
 
@@ -65,4 +67,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <a href="/view/admin/dashboard.php">Retour au dashboard</a>
 </body>
+
 </html>
