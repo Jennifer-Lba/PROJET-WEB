@@ -1,15 +1,10 @@
 <?php
-//Zeinab
-
 require_once __DIR__ . '/../config/config.php';
-
-require_once __DIR__ . '/../models/users.php';
-
-//gérer l'inscription
 session_start();
 
 class AuthController
 {
+    // INSCRIPTION
     public function register()
     {
         global $pdo;
@@ -19,6 +14,7 @@ class AuthController
             exit;
         }
 
+        // Vérifier champs
         if (
             empty($_POST['first_name']) ||
             empty($_POST['last_name']) ||
@@ -37,6 +33,16 @@ class AuthController
         $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
         $role = $_POST['role'];
 
+        // Vérifier si email existe déjà
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        if ($stmt->fetch()) {
+            $_SESSION['error'] = "Cet email existe déjà. Connectez-vous.";
+            header("Location: ../views/auth/login.php");
+            exit;
+        }
+
+        // Inscrire l'utilisateur
         $stmt = $pdo->prepare("INSERT INTO users (first_name, last_name, email, password, role)
                                VALUES (?,?,?,?,?)");
         $stmt->execute([$first, $last, $email, $password, $role]);
@@ -46,7 +52,7 @@ class AuthController
         exit;
     }
 
-    //connexion
+    // CONNEXION
     public function login()
     {
         global $pdo;
@@ -65,7 +71,7 @@ class AuthController
         $email = $_POST['email'];
         $password = $_POST['password'];
 
-        // Chercher l'utilisateur
+        // Chercher utilisateur
         $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch();
@@ -76,27 +82,42 @@ class AuthController
             exit;
         }
 
-        // Connexion OK
+        // Connexion réussie
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_role'] = $user['role'];
 
-        header("Location: ../index.php");
+        // Redirection selon le rôle
+        switch ($user['role']) {
+            case 'Admin':
+                header("Location: ../views/admin/dashboard.php");
+                break;
+            case 'Ecole':
+                header("Location: ../views/ecole/dashboard.php");
+                break;
+            case 'Entreprise':
+                header("Location: ../views/entreprise/dashboard.php");
+                break;
+            default:
+                header("Location: ../views/user/dashboard.php");
+                break;
+        }
         exit;
     }
-    //deconnexion
+
+    // DECONNEXION
     public function logout()
     {
+        session_unset();
         session_destroy();
         header("Location: ../views/auth/login.php");
         exit;
     }
 }
 
+// ROUTER SIMPLE
 $auth = new AuthController();
+$action = $_POST['action'] ?? $_GET['action'] ?? null;
 
-// router simple
-if (isset($_GET['action'])) {
-    if ($_GET['action'] === "register") $auth->register();
-    if ($_GET['action'] === "login") $auth->login();
-    if ($_GET['action'] === "logout") $auth->logout();
-};
+if ($action === "register") $auth->register();
+if ($action === "login") $auth->login();
+if ($action === "logout") $auth->logout();

@@ -1,6 +1,22 @@
+<?php
+require_once "../../config/config.php";
+// // pour utiliser la variable définie dans config.php
+global $pdo;
+
+?>
+<?php
+if (!empty($_SESSION['error'])): ?>
+    <p style="color:red;"><?= $_SESSION['error']; ?></p>
+    <?php unset($_SESSION['error']); ?>
+<?php endif; ?>
+
+<?php if (!empty($_SESSION['success'])): ?>
+    <p style="color:green;"><?= $_SESSION['success']; ?></p>
+    <?php unset($_SESSION['success']); ?>
+<?php endif; ?>
+
 <!DOCTYPE html>
 <html lang="en">
-<!-- //Zeinab -->
 
 <head>
     <meta charset="UTF-8">
@@ -10,36 +26,26 @@
 
 <body>
     <h1>SE CONNECTER</h1>
-    <!-- //Afficher les erreurs -->
+
+    <p>Vous avez déjà un compte connectez-vous!</p>
+    <!-- Affichage des erreurs -->
     <?php if (!empty($_SESSION['error'])): ?>
         <p style="color:red;"><?= $_SESSION['error']; ?></p>
         <?php $_SESSION['error'] = ""; ?>
     <?php endif; ?>
 
-    <!-- //Afficher les succes -->
-    <?php if (!empty($_SESSION['success'])): ?>
-        <p style="color:green;"><?= $_SESSION['success']; ?></p>
-        <?php $_SESSION['success'] = ""; ?>
-    <?php endif; ?>
-
-    <p>Vous avez déjà un compte connectez-vous!</p>
-
-    <form action="../../controllers/AuthController.php?action=login" method="POST">
-        <!--
-        //sert a indiquer au controleur que l'action a traiter est login. -->
+    <form action="../../controllers/AuthController.php" method="POST">
         <input type="hidden" name="action" value="login">
 
-        <div>
-            <label for="email">Email</label>
-            <input type="email" name="email" id="email" required>
-        </div>
-        <div>
-            <br>
-            <label for="password">Mot de passe</label>
-            <input type="password" name="password" id="password" required>
-        </div>
-        <br>
-        <button type="submit"> Se Connecter</button>
+        <label for="email">Email</label>
+        <input type="email" name="email" id="email" required>
+        <br><br>
+
+        <label for="password">Mot de passe</label>
+        <input type="password" name="password" id="password" required>
+        <br><br>
+
+        <button type="submit">Se connecter</button>
     </form>
 
     <p>Vous n'avez pas encore de compte ? </p>

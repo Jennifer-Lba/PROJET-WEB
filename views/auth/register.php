@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-<!-- //Zeinab -->
 
 <head>
     <meta charset="UTF-8">
@@ -11,14 +10,7 @@
 <body>
     <h1>INSCRIPTION</h1>
 
-    <?php
-    if (isset($_SESSION['error'])) {
-        echo "<p style='color:red'>" . $_SESSION['error'] . "</p>";
-        unset($_SESSION['error']);
-    }
-    ?>
-
-    <form action="../../controllers/AuthController.php" method="POST">
+    <form action="/controllers/AuthController.php" method="POST">
         <!--
         //permet denvoyer linfo au controleur donc le controller saura quoi faire -->
         <input type="hidden" name="action" value="register">
@@ -57,6 +49,8 @@
         <a href="login.php">Se connecter </a> <br>
         <br>
         <button type="submit"> S'inscrire </button>
+
+
 
     </form>
 </body>
