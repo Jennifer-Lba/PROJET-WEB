@@ -39,3 +39,22 @@ function isAdmin()
 {
     return isLogged() && $_SESSION['user']['role'] === 'admin';
 }
+
+// Bloque l'accès si l'utilisateur n'est pas connecté
+function requireLogin() {
+    if (!isLogged()) {
+        redirect('/auth/login.php');
+    }
+}
+
+// Bloque l'accès selon le rôle
+function requireRole($roles = []) {
+    if (!isLogged() || !in_array($_SESSION['user']['role'], $roles)) {
+        die("Accès refusé : vous n'etes pas autorisé à accèder à cette page.");
+    }
+}
+
+// Récupère les informations de l'utilisateur connecté
+function currentUser() {
+    return $_SESSION['user'] ?? null;
+}
