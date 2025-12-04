@@ -17,26 +17,62 @@ class Question
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public static function create(int $quiz_id, string $question, string $a, string $b, string $c, string $d, string $correct): bool
+    public static function create(int $quiz_id, string $question_text, string $type = 'qcm', int $points = 1, array $choices = []): bool
     {
-        $stmt = self::getConnection()->prepare("
-            INSERT INTO questions (quiz_id, question, option_a, option_b, option_c, option_d, correct_option)
-            VALUES (:quiz_id, :question, :a, :b, :c, :d, :correct)
-        ");
+        $conn = self::getConnection();
+
+        // Pour compatibilité on met correct_answer NULL par défaut
+        $correct_answer = null;
+
+        // Insertion de la question
+        $stmt = $conn->prepare("
+        INSERT INTO questions (quiz_id, question_text, type, points, correct_answer)
+        VALUES (:quiz_id, :question_text, :type, :points, :correct_answer)
+    ");
         $stmt->bindParam(':quiz_id', $quiz_id, PDO::PARAM_INT);
-        $stmt->bindParam(':question', $question);
-        $stmt->bindParam(':a', $a);
-        $stmt->bindParam(':b', $b);
-        $stmt->bindParam(':c', $c);
-        $stmt->bindParam(':d', $d);
-        $stmt->bindParam(':correct', $correct);
-        return $stmt->execute();
+        $stmt->bindParam(':question_text', $question_text);
+        $stmt->bindParam(':type', $type);
+        $stmt->bindParam(':points', $points, PDO::PARAM_INT);
+        $stmt->bindParam(':correct_answer', $correct_answer);
+
+        $ok = $stmt->execute();
+        if (!$ok) return false;
+
+        $questionId = (int)$conn->lastInsertId();
+
+        // Si QCM et choix fournis, insérer les choix
+        if ($type === 'qcm' && !empty($choices)) {
+            $ins = $conn->prepare("
+            INSERT INTO choices (question_id, choice_text, is_correct)
+            VALUES (:question_id, :choice_text, :is_correct)
+        ");
+            foreach ($choices as $c) {
+                $choice_text = $c['choice_text'] ?? '';
+                $is_correct = !empty($c['is_correct']) ? 1 : 0;
+                $ins->execute([
+                    ':question_id' => $questionId,
+                    ':choice_text' => $choice_text,
+                    ':is_correct' => $is_correct
+                ]);
+            }
+        }
+
+        return true;
     }
+
 
     public static function delete(int $id): bool
     {
-        $stmt = self::getConnection()->prepare("DELETE FROM questions WHERE id = :id");
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-        return $stmt->execute();
+        $conn = self::getConnection();
+
+        // Supprime les choix (sécurité si pas de FK cascade)
+        $delChoices = $conn->prepare("DELETE FROM choices WHERE question_id = :id");
+        $delChoices->bindParam(':id', $id, PDO::PARAM_INT);
+        $delChoices->execute();
+
+        // Supprime la question
+        $delQ = $conn->prepare("DELETE FROM questions WHERE id = :id");
+        $delQ->bindParam(':id', $id, PDO::PARAM_INT);
+        return $delQ->execute();
     }
 }

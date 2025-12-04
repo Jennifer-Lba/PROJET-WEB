@@ -1,6 +1,10 @@
 <?php
 $host = "localhost";
+<<<<<<< HEAD
 $db_name = "quizzeo";
+=======
+$db_name = "quizzeo_db";
+>>>>>>> 9cffc80c4e55a780bfee1a7178c5fe58868c1964
 $username = "root";
 $password = "";
 
