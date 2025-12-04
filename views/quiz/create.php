@@ -3,7 +3,8 @@ require_once __DIR__ . '/../../controllers/QuizController.php';
 require_once __DIR__ . '/../../helpers/functions.php';
 
 
-if (!isset($_SESSION['user']) || ($_SESSION['user']['role'] !== 'admin' && $_SESSION['user']['role'] !== 'école')) {
+// Autoriser les rôles suivants : administrateur (deux variantes), école, entreprise
+if (!isset($_SESSION['user']) || !in_array($_SESSION['user']['role'], ['admin', 'administrateur', 'école', 'entreprise'], true)) {
     redirect('/views/auth/login.php');
 }
 

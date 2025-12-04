@@ -3,9 +3,9 @@ require_once __DIR__ . '/../../controllers/QuizController.php';
 require_once __DIR__ . '/../../helpers/functions.php';
 
 
-if (!isset($_SESSION['user']) || ($_SESSION['user']['role'] !== 'admin' && $_SESSION['user']['role'] !== 'école')) {
-    redirect('/views/auth/login.php');
-}
+requireLogin();
+// Autoriser uniquement : administrateur (admin/administrateur), école ou entreprise
+requireRole(['admin', 'administrateur', 'école', 'entreprise']);
 
 $quizCtrl = new QuizController();
 $message = '';
@@ -19,6 +19,11 @@ if (!$id) {
 $quiz = $quizCtrl->getById((int)$id);
 if (!$quiz) {
     redirect('/views/quiz/dashboard_school.php');
+}
+
+// Autoriser seulement le créateur du quiz (comparer en int) ou un administrateur
+if ((int)$quiz['creator_id'] !== (int)($_SESSION['user']['id'] ?? 0) && !isAdmin()) {
+    die("Accès refusé.");
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

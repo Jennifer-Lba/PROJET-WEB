@@ -42,15 +42,15 @@ if ($quiz['creator_id'] == $user['id'] || isAdmin()) {
     $show_all = false;
 }
 
-//Déterminer le retour selon selon le rôle
+// Déterminer le lien de retour selon le rôle (utiliser isAdmin() pour normaliser admin)
 $dashboardLink = '/index.php';
 if ($user['role'] === 'école') {
     $dashboardLink = '/views/quiz/dashboard_school.php';
 } elseif ($user['role'] === 'entreprise') {
     $dashboardLink = '/views/quiz/dashboard_company.php';
-} elseif ($user['role'] === 'admin') {
+} elseif (isAdmin()) {
     $dashboardLink = '/views/admin/dashboard.php';
-}elseif ($user['role'] === 'utilisateur') {
+} elseif ($user['role'] === 'utilisateur') {
     $dashboardLink = '/views/user/dashboard.php';
 }
 ?>

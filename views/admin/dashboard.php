@@ -102,7 +102,7 @@ $quizzes = $stmt->fetchAll();
 </tbody>
 </table>
 
-<a href="controllers/AuthController.php?action=logout">Se déconnecter</a>
+<a href="/controllers/logout.php">Se déconnecter</a>
 
 </body>
 </html>

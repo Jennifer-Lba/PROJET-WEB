@@ -6,10 +6,13 @@ require_once __DIR__ . '/../../config/conf.php';
 requireLogin();
 $user = currentUser();
 
-// Vérifier rôle
-if ($user['role'] !== 'école' && !isAdmin()) {
-    die("Accès refusé.");
+// Si un utilisateur entreprise arrive ici, le rediriger vers son dashboard
+if (($user['role'] ?? '') === 'entreprise') {
+    redirect('/views/quiz/dashboard_company.php');
 }
+
+// Autoriser uniquement : école ou administrateur
+requireRole(['école', 'admin', 'administrateur']);
 
 // Récupérer les quiz de l'école
 $stmt = $conn->prepare("SELECT * FROM quizzes WHERE creator_id = ? ORDER BY id DESC");

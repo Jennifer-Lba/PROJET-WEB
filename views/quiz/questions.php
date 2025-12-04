@@ -3,9 +3,9 @@ require_once __DIR__ . '/../../helpers/functions.php';
 require_once __DIR__ . '/../../config/conf.php';
 require_once __DIR__ . '/../../models/question.php';
 
-if (!isset($_SESSION['user']) || ($_SESSION['user']['role'] !== 'admin' && $_SESSION['user']['role'] !== 'école')) {
-    redirect('/views/auth/login.php');
-}
+requireLogin();
+// Autoriser uniquement : administrateur (admin/administrateur), école ou entreprise (créateurs de quiz)
+requireRole(['admin', 'administrateur', 'école', 'entreprise']);
 
 // Récupère l'ID du quiz
 $quiz_id = get('quiz_id') ?? $_POST['quiz_id'] ?? null;
@@ -22,8 +22,8 @@ if (!$quiz) {
     redirect('/views/quiz/dashboard_school.php');
 }
 
-// Vérifier que l'utilisateur est le créateur du quiz
-if ($quiz['creator_id'] !== $_SESSION['user']['id']) {
+// Vérifier que l'utilisateur est le créateur du quiz (comparer en int) ou un admin
+if ((int)$quiz['creator_id'] !== (int)($_SESSION['user']['id'] ?? 0) && !isAdmin()) {
     die("Accès refusé.");
 }
 

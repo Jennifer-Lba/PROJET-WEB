@@ -4,12 +4,9 @@ require_once __DIR__ . '/../../helpers/functions.php';
 require_once __DIR__ . '/../../config/conf.php';
 
 requireLogin();
+// Autoriser uniquement : entreprise ou administrateur
+requireRole(['entreprise', 'admin', 'administrateur']);
 $user = currentUser();
-
-// Vérifier rôle
-if ($user['role'] !== 'entreprise' && !isAdmin()) {
-    die("Accès refusé.");
-}
 
 // Récupérer les quiz de l'entreprise
 $stmt = $conn->prepare("SELECT * FROM quizzes WHERE creator_id = ? ORDER BY id DESC");
@@ -49,6 +46,7 @@ $quizzes = $stmt->fetchAll();
                     <td><?= $count ?></td>
                     <td>
                         <a class="button" href="/views/quiz/edit.php?quiz_id=<?= $q['id'] ?>">Éditer</a>
+                        <a class="button" href="/views/quiz/questions.php?quiz_id=<?= $q['id'] ?>">Questions</a>
                         <a class="button" href="/views/quiz/results.php?quiz_id=<?= $q['id'] ?>">Résultats</a>
                     </td>
                 </tr>

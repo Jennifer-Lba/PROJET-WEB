@@ -38,7 +38,9 @@ function isLogged()
 function isAdmin()
 {
     // Supporter deux variantes possibles du rôle administrateur
-    return isLogged() && in_array($_SESSION['user']['role'], ['admin', 'administrateur'], true);
+    $role = $_SESSION['user']['role'] ?? '';
+    $n = normalizeRole($role);
+    return isLogged() && in_array($n, ['admin', 'administrateur', 'administrateur'], true);
 }
 
 // Bloque l'accès si l'utilisateur n'est pas connecté
@@ -49,9 +51,40 @@ function requireLogin() {
 }
 
 // Bloque l'accès selon le rôle
+function normalizeRole(string $role): string {
+    // Lowercase and remove common accents for comparison
+    $r = mb_strtolower($role, 'UTF-8');
+    $map = [
+        'à' => 'a', 'â' => 'a', 'ä' => 'a',
+        'á' => 'a', 'ã' => 'a', 'å' => 'a',
+        'ç' => 'c',
+        'è' => 'e', 'é' => 'e', 'ê' => 'e', 'ë' => 'e',
+        'ì' => 'i', 'í' => 'i', 'î' => 'i', 'ï' => 'i',
+        'ò' => 'o', 'ó' => 'o', 'ô' => 'o', 'ö' => 'o',
+        'ù' => 'u', 'ú' => 'u', 'û' => 'u', 'ü' => 'u',
+        'ß' => 'ss'
+    ];
+    $r = strtr($r, $map);
+    $r = preg_replace('/[^a-z0-9_\-]/', '', $r);
+    return $r;
+}
+
 function requireRole($roles = []) {
-    if (!isLogged() || !in_array($_SESSION['user']['role'], $roles)) {
-        die("Accès refusé : vous n'etes pas autorisé à accèder à cette page.");
+    if (!isLogged()) {
+        // If not logged, redirect to login
+        redirect('/views/auth/login.php');
+    }
+
+    $current = $_SESSION['user']['role'] ?? '';
+    $nCurrent = normalizeRole($current);
+
+    // Normalize allowed roles for comparison
+    $normalizedAllowed = array_map('normalizeRole', $roles);
+
+    if (!in_array($nCurrent, $normalizedAllowed, true) && !isAdmin()) {
+        $allowedList = implode(', ', $roles);
+        $safeRole = htmlspecialchars($current ?: 'aucun');
+        die("Accès refusé : rôle actuel={$safeRole}. Rôles autorisés : {$allowedList}.");
     }
 }
 

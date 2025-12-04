@@ -143,4 +143,16 @@ if (isset($_GET['action'])) {
     if ($action === 'deleteQuiz') {
         AdminController::deleteQuiz($id);
     }
+
+    if ($action === 'setUserActive') {
+        AdminController::setUserActive($id);
+    }
+
+    if ($action === 'setQuizStatus') {
+        AdminController::setQuizStatus($id);
+    }
+
+    // Si on arrive ici sans correspondance, rediriger vers le dashboard
+    redirect('../views/admin/dashboard.php?error=unhandled_action');
+    exit;
 }
