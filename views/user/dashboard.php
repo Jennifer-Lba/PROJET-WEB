@@ -1,13 +1,13 @@
 <?php
 require_once __DIR__ . '/../../helpers/functions.php';
-require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../../config/conf.php';
 
 requireLogin();
 
 $user = currentUser();
 
 // Récupérer les quiz disponibles pour l'utilisateur (actifs)
-$stmt = $conn->prepare("SELECT * FROM quizzes WHERE status = 'active'");
+$stmt = $conn->prepare("SELECT * FROM quizzes WHERE status = 'active' ORDER BY id DESC");
 $stmt->execute();
 $quizzes = $stmt->fetchAll();
 
@@ -35,12 +35,12 @@ $answered = $stmt->fetchAll(PDO::FETCH_COLUMN);
                 <?php if (in_array($q['id'], $answered)): ?>
                     - Déjà répondu
                 <?php else: ?>
-                    - <a href="/view/quiz/answer.php?quiz_id=<?= $q['id'] ?>">Répondre</a>
+                    - <a href="/views/quiz/answer.php?quiz_id=<?= $q['id'] ?>">Répondre</a>
                 <?php endif; ?>
             </li>
         <?php endforeach; ?>
     </ul>
 
-    <a href="/controllers/AuthController.php?action=logout">Se déconnecter</a>
+    <a href="/controllers/logout.php">Se déconnecter</a>
 </body>
 </html>

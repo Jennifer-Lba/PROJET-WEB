@@ -2,7 +2,7 @@
 // view/quiz/results.php
 //cette page affiche les résultats de un quiz spécifique.
 require_once __DIR__ . '/../../helpers/functions.php';
-require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../../config/conf.php';
 requireLogin(); //  accès uniquement aux utilisateurs connectés
 
 $quizId = get('quiz_id');
@@ -14,23 +14,45 @@ $quiz = $stmt->fetch();
 if (!$quiz) die("Quiz introuvable.");
 
 
-// Vérifier que l'utilisateur est le créateur ou admin
+// Vérifier le rôle de l'utilisateur
 $user = currentUser();
-if ($quiz['creator_id'] != $user['id'] && !isAdmin()) {
-    die("Accès refusé.");
+// Si c'est le créateur ou un admin, afficher tous les résultats
+if ($quiz['creator_id'] == $user['id'] || isAdmin()) {
+    $stmt = $conn->prepare("
+        SELECT r.*, u.first_name, u.last_name
+        FROM results r
+        JOIN users u ON u.id = r.user_id
+        WHERE r.quiz_id = ?
+        ORDER BY r.score DESC
+    ");
+    $stmt->execute([$quizId]);
+    $results = $stmt->fetchAll();
+    $show_all = true;
+} else {
+    // Pour les utilisateurs ordinaires, afficher uniquement leur propre résultat (s'il existe)
+    $stmt = $conn->prepare("
+        SELECT r.*, u.first_name, u.last_name
+        FROM results r
+        JOIN users u ON u.id = r.user_id
+        WHERE r.quiz_id = ? AND r.user_id = ?
+        LIMIT 1
+    ");
+    $stmt->execute([$quizId, $user['id']]);
+    $userResult = $stmt->fetch();
+    $show_all = false;
 }
-// Pour récupérer les résultats pour ce quiz
-$stmt = $conn->prepare("
-    SELECT r.*, u.first_name, u.last_name
-    FROM results r
-    JOIN users u ON u.id = r.user_id
-    WHERE r.quiz_id = ?
-    ORDER BY r.score DESC
-");
-$stmt->execute([$quizId]);
-$results = $stmt->fetchAll();
 
-
+//Déterminer le retour selon selon le rôle
+$dashboardLink = '/index.php';
+if ($user['role'] === 'école') {
+    $dashboardLink = '/views/quiz/dashboard_school.php';
+} elseif ($user['role'] === 'entreprise') {
+    $dashboardLink = '/views/quiz/dashboard_company.php';
+} elseif ($user['role'] === 'admin') {
+    $dashboardLink = '/views/admin/dashboard.php';
+}elseif ($user['role'] === 'utilisateur') {
+    $dashboardLink = '/views/user/dashboard.php';
+}
 ?>
 
 <!DOCTYPE html>
@@ -41,29 +63,43 @@ $results = $stmt->fetchAll();
     <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body>
-    <h1>Résultats du quiz</h1>
+    <h1>Résultats du quiz: <?=htmlspecialchars($quiz["title"]) ?></h1>
+    <?php if (!empty($show_all) && $show_all): ?>
+        <p>Nombre de participants: <?= count($results) ?></p>
 
-    <?php if (empty($results)): ?>
-        <p>Aucun résultat pour ce quiz.</p>
-    <?php else: ?>
-        <table>
-            <thead>
-                <tr>
-                    <th>Nom</th>
-                    <th>Prénom</th>
-                    <th>Score</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($results as $r): ?>
+        <?php if (empty($results)): ?>
+            <p>Aucun résultat pour ce quiz.</p>
+        <?php else: ?>
+            <table>
+                <thead>
                     <tr>
-                        <td><?= htmlspecialchars($r['last_name']) ?></td>
-                        <td><?= htmlspecialchars($r['first_name']) ?></td>
-                        <td><?= htmlspecialchars($r['score']) ?></td>
+                        <th>Nom</th>
+                        <th>Prénom</th>
+                        <th>Score</th>
                     </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    <?php foreach ($results as $r): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($r['last_name']) ?></td>
+                            <td><?= htmlspecialchars($r['first_name']) ?></td>
+                            <td><?= htmlspecialchars($r['score']) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+    <?php else: ?>
+        <?php if (!empty($userResult)): ?>
+            <p>Votre résultat :</p>
+            <ul>
+                <li>Nom : <?= htmlspecialchars($userResult['last_name']) ?></li>
+                <li>Prénom : <?= htmlspecialchars($userResult['first_name']) ?></li>
+                <li>Score : <?= htmlspecialchars($userResult['score']) ?></li>
+            </ul>
+        <?php else: ?>
+            <p>Vous n'avez pas de résultat pour ce quiz (peut-être que vous n'avez pas encore répondu).</p>
+        <?php endif; ?>
     <?php endif; ?>
 
     <a href="/index.php">Retour à l’accueil</a>

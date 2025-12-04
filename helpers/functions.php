@@ -37,13 +37,14 @@ function isLogged()
 
 function isAdmin()
 {
-    return isLogged() && $_SESSION['user']['role'] === 'admin';
+    // Supporter deux variantes possibles du rôle administrateur
+    return isLogged() && in_array($_SESSION['user']['role'], ['admin', 'administrateur'], true);
 }
 
 // Bloque l'accès si l'utilisateur n'est pas connecté
 function requireLogin() {
     if (!isLogged()) {
-        redirect('/auth/login.php');
+        redirect('/views/auth/login.php');
     }
 }
 
@@ -57,4 +58,34 @@ function requireRole($roles = []) {
 // Récupère les informations de l'utilisateur connecté
 function currentUser() {
     return $_SESSION['user'] ?? null;
+}
+
+// Génère un token CSRF
+function generateCSRFToken() {
+    // Toujours générer un nouveau token pour cette session
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+// Retourne un champ input caché avec le token CSRF
+function csrfField() {
+    $token = generateCSRFToken();
+    return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($token) . '">';
+}
+
+// Vérifie le token CSRF
+function verifyCSRFToken($token = null) {
+    if ($token === null) {
+        $token = trim($_POST['csrf_token'] ?? '');
+    }
+
+    $session_token = isset($_SESSION['csrf_token']) ? trim($_SESSION['csrf_token']) : '';
+
+    if (empty($session_token) || empty($token) || $token !== $session_token) {
+        die("Erreur de sécurité : token invalide.");
+    }
+
+    return true;
 }

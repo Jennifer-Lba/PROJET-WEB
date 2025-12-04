@@ -1,3 +1,9 @@
+<?php
+session_start();
+require_once "../../helpers/functions.php";
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -9,6 +15,15 @@
 
 <body>
     <h1>INSCRIPTION</h1>
+<?php if (!empty($_SESSION['error'])): ?>
+        <p style="color:red;"><?= htmlspecialchars($_SESSION['error']); ?></p>
+        <?php unset($_SESSION['error']); ?>
+    <?php endif; ?>
+
+    <?php if (!empty($_SESSION['success'])): ?>
+        <p style="color:green;"><?= htmlspecialchars($_SESSION['success']); ?></p>
+        <?php unset($_SESSION['success']); ?>
+    <?php endif; ?>
 
     <form action="/controllers/AuthController.php" method="POST">
         <!--
@@ -39,10 +54,10 @@
             <br>
             <label for="role">Sélectionner votre Rôle</label>
             <select name="role" id="role" required>
-                <option value="Admin">Admin</option>
-                <option value="Ecole">Ecole</option>
-                <option value="Entreprise">Entreprise</option>
-                <option value="Simple Utilisateur">Simple Utilisateur</option>
+                <option value="administrateur">Administrateur</option>
+                <option value="école">école</option>
+                <option value="entreprise">entreprise</option>
+                <option value="utilisateur">utilisateur</option>
             </select>
         </div>
         <p>Vous avez déjà un compte ? </p>

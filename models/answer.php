@@ -11,9 +11,15 @@ class Answer {
     public function addAnswer(int $userId, int $quizId, int $questionId, string $answerText, int $score = 0) {
         $stmt = $this->conn->prepare("
             INSERT INTO answers_quiz (user_id, quiz_id, question_id, answer_text, score)
-            VALUES (:user_id, :quiz_id, :question_id,answer_text, :score)
+            VALUES (:user_id, :quiz_id, :question_id, :answer_text, :score)
         ");
-        $stmt->execute([$userId, $quizId, $questionId, $answerText, $score]);
+                $stmt->execute([
+                    'user_id' => $userId,
+                    'quiz_id' => $quizId,
+                    'question_id' => $questionId,
+                    'answer_text' => $answerText,
+                    'score' => $score
+                ]);
     }
 
 // Récupérer toutes les réponses d'un quiz avec les noms des utilisateurs et le texte des questions

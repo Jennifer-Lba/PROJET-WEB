@@ -1,13 +1,13 @@
 <?php
 require_once __DIR__ . '/../../helpers/functions.php';
-require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../../config/conf.php';
 
 requireLogin(); // accès uniquement aux utilisateurs connectés
 
 $quizId = get('quiz_id');
 if (!$quizId) die("Quiz introuvable.");
 
-// Vérifier quiz
+// Vérifier le statut   quiz
 $stmt = $conn->prepare("SELECT * FROM quizzes WHERE id = ? AND status='active'");
 $stmt->execute([$quizId]);
 $quiz = $stmt->fetch();
@@ -49,7 +49,8 @@ foreach ($rows as $row) {
     <title>Document</title>
 </head>
 <body>
-    <form method="POST" action="/controllers/AnswerController.php">
+    <form action="/controllers/AnswerController.php?quiz_id=<?= $quiz['id'] ?>"  method="POST">
+    <?= csrfField() ?>
     <input type="hidden" name="quiz_id" value="<?= $quiz['id'] ?>">
 
     <?php foreach ($questions as $q): ?>

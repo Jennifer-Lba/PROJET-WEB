@@ -2,31 +2,28 @@
 require_once __DIR__ . '/../../controllers/QuizController.php';
 require_once __DIR__ . '/../../helpers/functions.php';
 
-session_start();
 
-if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
-    redirect('/view/auth/login.php');
+if (!isset($_SESSION['user']) || ($_SESSION['user']['role'] !== 'admin' && $_SESSION['user']['role'] !== 'école')) {
+    redirect('/views/auth/login.php');
 }
 
 $quizCtrl = new QuizController();
 $message = '';
 
 // Vérifie qu'on a bien l'ID du quiz
-$id = get('id');
+$id = get('quiz_id');
 if (!$id) {
-    redirect('/view/admin/dashboard.php');
+    redirect('/views/quiz/dashboard_school.php');
 }
 
 $quiz = $quizCtrl->getById((int)$id);
 if (!$quiz) {
-    redirect('/view/admin/dashboard.php');
+    redirect('/views/quiz/dashboard_school.php');
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = post('title');
-    $description = post('description');
-
-    if ($title && $description) {
+    $description = post('description');    if ($title && $description) {
         if ($quizCtrl->update((int)$id, $title, $description)) {
             $message = "Quiz modifié avec succès !";
             $quiz = $quizCtrl->getById((int)$id);
@@ -65,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <button type="submit">Modifier le quiz</button>
     </form>
 
-    <a href="/view/admin/dashboard.php">Retour au dashboard</a>
+    <a href="/views/quiz/dashboard_school.php">Retour au dashboard</a>
 </body>
 
 </html>

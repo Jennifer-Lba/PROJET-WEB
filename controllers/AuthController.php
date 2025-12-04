@@ -1,104 +1,130 @@
 <?php
-require_once __DIR__ . '/../config/config.php';
-session_start();
+// controllers/AuthController.php
+require_once __DIR__ . '/../config/conf.php';
+require_once __DIR__ . '/../helpers/functions.php';
 
 class AuthController
 {
+    private $conn;
+    public function __construct() {
+        global $conn;
+        $this->conn = $conn;
+    }
+
     // INSCRIPTION
     public function register()
     {
-        global $pdo;
-
-        if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-            header("Location: ../views/auth/register.php");
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header("Location: /views/auth/register.php");
             exit;
         }
 
-        // Vérifier champs
-        if (
-            empty($_POST['first_name']) ||
-            empty($_POST['last_name']) ||
-            empty($_POST['email']) ||
-            empty($_POST['password']) ||
-            empty($_POST['role'])
-        ) {
+        $first = trim($_POST['first_name'] ?? '');
+        $last  = trim($_POST['last_name'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $role = trim($_POST['role'] ?? '');
+        // normalize role values coming from the form (support 'admin' -> 'administrateur')
+        if ($role === 'admin') {
+            $role = 'administrateur';
+        }
+
+        if (!$first || !$last || !$email || !$password || !$role) {
             $_SESSION['error'] = "Veuillez remplir tous les champs.";
-            header("Location: ../views/auth/register.php");
+            header("Location: /views/auth/register.php");
             exit;
         }
 
-        $first = $_POST['first_name'];
-        $last = $_POST['last_name'];
-        $email = $_POST['email'];
-        $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-        $role = $_POST['role'];
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $_SESSION['error'] = "Email invalide.";
+            header("Location: /views/auth/register.php");
+            exit;
+        }
 
-        // Vérifier si email existe déjà
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
+        // Autoriser désormais la création d'un compte administrateur depuis le formulaire
+        // (attention : cela ouvre la possibilité de créer des admins depuis l'interface publique).
+        $allowedRoles = ['utilisateur','école','entreprise','administrateur'];
+        if (!in_array($role, $allowedRoles)) {
+            $_SESSION['error'] = "Rôle invalide.";
+            header("Location: /views/auth/register.php");
+            exit;
+        }
+
+        // vérifier si email déjà présent
+        $stmt = $this->conn->prepare("SELECT id FROM users WHERE email = ?");
         $stmt->execute([$email]);
         if ($stmt->fetch()) {
             $_SESSION['error'] = "Cet email existe déjà. Connectez-vous.";
-            header("Location: ../views/auth/login.php");
+            header("Location: /views/auth/login.php");
             exit;
         }
 
-        // Inscrire l'utilisateur
-        $stmt = $pdo->prepare("INSERT INTO users (first_name, last_name, email, password, role)
-                               VALUES (?,?,?,?,?)");
-        $stmt->execute([$first, $last, $email, $password, $role]);
+        $hashed = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $this->conn->prepare("INSERT INTO users (first_name,last_name,email,password,role) VALUES (?,?,?,?,?)");
+        $stmt->execute([$first, $last, $email, $hashed, $role]);
 
         $_SESSION['success'] = "Inscription réussie ! Vous pouvez vous connecter.";
-        header("Location: ../views/auth/login.php");
+        header("Location: /views/auth/login.php");
         exit;
     }
 
     // CONNEXION
     public function login()
     {
-        global $pdo;
-
-        if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-            header("Location: ../views/auth/login.php");
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header("Location: /views/auth/login.php");
             exit;
         }
 
-        if (empty($_POST['email']) || empty($_POST['password'])) {
+        $email = trim($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
+
+        if (!$email || !$password) {
             $_SESSION['error'] = "Veuillez remplir tous les champs.";
-            header("Location: ../views/auth/login.php");
+            header("Location: /views/auth/login.php");
             exit;
         }
 
-        $email = $_POST['email'];
-        $password = $_POST['password'];
-
-        // Chercher utilisateur
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
+        $stmt = $this->conn->prepare("SELECT * FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch();
 
-        if (!$user || !password_verify($password, $user['password'])) {
-            $_SESSION['error'] = "Email ou mot de passe incorrect.";
-            header("Location: ../views/auth/login.php");
+        if (!$user) {
+            $_SESSION['error'] = "Cet email n'existe pas. Veuillez vous inscrire.";
+            header("Location: /views/auth/register.php");
             exit;
         }
 
-        // Connexion réussie
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['user_role'] = $user['role'];
+        if (!password_verify($password, $user['password'])) {
+            $_SESSION['error'] = "Mot de passe incorrect.";
+            header("Location: /views/auth/login.php");
+            exit;
+        }
 
-        // Redirection selon le rôle
+        // succès
+        session_regenerate_id(true);
+        $_SESSION['user'] = [
+            'id' => $user['id'],
+            'email' => $user['email'],
+            'first_name' => $user['first_name'],
+            'last_name' => $user['last_name'],
+            'role' => $user['role']
+        ];
+
+        // Redirection selon rôle (routes propres gérées par .htaccess)
         switch ($user['role']) {
-            case 'Admin':
-                header("Location: ../views/admin/dashboard.php");
+            case 'admin':
+            case 'administrateur':
+                header("Location: /views/admin/dashboard.php");
                 break;
-            case 'Ecole':
-                header("Location: ../views/ecole/dashboard.php");
+            case 'école':
+                header("Location: /views/quiz/dashboard_school.php");
                 break;
-            case 'Entreprise':
-                header("Location: ../views/entreprise/dashboard.php");
+            case 'entreprise':
+                header("Location: /views/quiz/dashboard_company.php");
                 break;
             default:
-                header("Location: ../views/user/dashboard.php");
+                header("Location: /views/user/dashboard.php");
                 break;
         }
         exit;
@@ -109,15 +135,14 @@ class AuthController
     {
         session_unset();
         session_destroy();
-        header("Location: ../views/auth/login.php");
+        header("Location: /index.php");
         exit;
     }
 }
 
-// ROUTER SIMPLE
+// Router
 $auth = new AuthController();
-$action = $_POST['action'] ?? $_GET['action'] ?? null;
-
-if ($action === "register") $auth->register();
-if ($action === "login") $auth->login();
-if ($action === "logout") $auth->logout();
+$action = $_POST['action'] ?? $_GET['action'] ?? '';
+if ($action === 'register') $auth->register();
+if ($action === 'login') $auth->login();
+if ($action === 'logout') $auth->logout();

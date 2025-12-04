@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../config/conf.php';
 
 class QuizController
 {
@@ -28,9 +28,15 @@ class QuizController
 
     public function create(string $title, string $description): bool
     {
-        $stmt = $this->conn->prepare("INSERT INTO quizzes (title, description) VALUES (:title, :description)");
+        $user = $_SESSION['user'] ?? null;
+        if (!$user) return false;
+
+        $status = 'active';
+        $stmt = $this->conn->prepare("INSERT INTO quizzes (title, description, creator_id, status) VALUES (:title, :description, :creator_id, :status)");
         $stmt->bindParam(':title', $title);
         $stmt->bindParam(':description', $description);
+        $stmt->bindParam(':creator_id', $user['id'], PDO::PARAM_INT);
+        $stmt->bindParam(':status', $status);
         return $stmt->execute();
     }
 
